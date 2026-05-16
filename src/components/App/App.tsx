@@ -7,6 +7,7 @@ import css from "./App.module.css";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { fetchPosts } from "../../services/postService";
 import { useState } from "react";
+import { useDebouncedCallback } from "use-debounce";
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState(1);
@@ -16,16 +17,18 @@ export default function App() {
     queryFn: () => fetchPosts(searchQuery, currentPage),
     placeholderData: keepPreviousData,
   });
-  console.log(data);
-
+  const totalPage = data?.totalCount ? Math.ceil(data.totalCount / 8) : 0;
+  const posts = data?.posts || [];
+  const hendleSearch = useDebouncedCallback(query=>{setSearchQuery(query); setCurrentPage(1)}, 1000);
   return (
     <div className={css.app}>
       <header className={css.toolbar}>
-        <SearchBox />
-        <Pagination />
+        <SearchBox  onSearch={hendleSearch}/>
+        {totalPage>1&&<Pagination totalPages={totalPage} currentPage={currentPage} onPageChange={setCurrentPage} />}
+        
         <button className={css.button}>Create post</button>
       </header>
-      <PostList />
+      {posts.length>0&&<PostList posts={posts} />}
     </div>
   );
 }
